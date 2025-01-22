@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-export async function middleware(req: Request) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+export async function middleware(req: any) {
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
-  if (token) {
-    const url = new URL(req.url);
-    if (url.pathname === "/") {
-      return NextResponse.redirect(new URL("/chatlist", req.url)); 
+  const { pathname } = req.nextUrl;
+
+  if (pathname === "/" || pathname.startsWith("/landing")) {
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/editor")) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/", req.url));
     }
   }
 
@@ -15,5 +23,5 @@ export async function middleware(req: Request) {
 }
 
 export const config = {
-  matcher: ["/"],
+  matcher: ["/dashboard/:path*", "/landing/:path*", "/"], 
 };
