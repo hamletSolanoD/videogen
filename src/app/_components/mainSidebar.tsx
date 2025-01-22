@@ -11,6 +11,8 @@ export default function mainSidebar() {
     { href: "/editor/chatlist", label: "Chat List" },
     { href: "/editor/profile", label: "Profile" },
     { href: "/editor/settings", label: "Settings" },
+    { href: "/editor/apidemos", label: "api demos" },
+
   ];
 
   return (

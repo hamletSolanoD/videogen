@@ -1,5 +1,5 @@
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
-import { abacusRouter } from "./routers/abacus";
+import { abacusClientRouter } from "./routers/abacus";
 
 /**
  * This is the primary router for your server.
@@ -7,7 +7,7 @@ import { abacusRouter } from "./routers/abacus";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-  abacus: abacusRouter,
+  abacusClientRouter: abacusClientRouter,
 });
 
 // export type definition of API

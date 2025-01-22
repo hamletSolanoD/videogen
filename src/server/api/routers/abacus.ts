@@ -1,74 +1,116 @@
-// src/server/api/routers/abacus.ts
-
+// src/server/routers/abacusClient.ts
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
+import { env } from "~/env";
 
-// Configuración de la API de Abacus
-const ABACUS_API_KEY = process.env.ABACUS_API_KEY;
-const ABACUS_API_URL = process.env.ABACUS_API_URL;
-
-export const abacusRouter = createTRPCRouter({
-  // Ejemplo de procedimiento público
-  getAbacusData: publicProcedure
-    .input(
-      z.object({
-        // Define aquí los parámetros que necesitas enviar a Abacus
-        parametro1: z.string(),
-        parametro2: z.number(),
-      })
-    )
+export const abacusClientRouter = createTRPCRouter({
+  // Método para obtener los chats de un usuario por su ID
+  getChatsByUserId: publicProcedure
+    .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      try {
-        const response = await fetch(`${ABACUS_API_URL}/endpoint`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${ABACUS_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        });
+      const response = await fetch(`${env.ABACUS_API_URL}/listChatSessions`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
 
-        if (!response.ok) {
-          throw new Error('Error en la petición a Abacus');
-        }
-
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        throw new Error(`Error al consultar Abacus: ${error}`);
+      if (!response.ok) {
+        throw new Error("Error al obtener los chats del usuario");
       }
+
+      const data = await response.json();
+      // Filtrar los chats por el userId si es necesario
+      return data.ChatSession || [];
     }),
 
-  // Ejemplo de procedimiento protegido
-  postAbacusData: protectedProcedure
-    .input(
-      z.object({
-        // Define aquí los parámetros para POST
-        data: z.object({
-          campo1: z.string(),
-          campo2: z.number(),
+  // Método para continuar una conversación específica
+  continueChat: publicProcedure
+    .input(z.object({ chatSessionId: z.string(), message: z.string() }))
+    .mutation(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/getChatSession`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          chatSessionId: input.chatSessionId,
         }),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      // Aquí puedes acceder al usuario autenticado con ctx.session.user
-      try {
-        const response = await fetch(`${ABACUS_API_URL}/endpoint`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${ABACUS_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(input.data),
-        });
+      });
 
-        if (!response.ok) {
-          throw new Error('Error en la petición a Abacus');
-        }
-
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        throw new Error(`Error al enviar datos a Abacus: ${error}`);
+      if (!response.ok) {
+        throw new Error("Error al continuar la conversación");
       }
+
+      const chatData = await response.json();
+
+      // Aquí puedes manejar la lógica para enviar un nuevo mensaje al chat
+      const sendMessageResponse = await fetch(
+        `${env.ABACUS_API_URL}/sendMessage`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${env.ABACUS_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chatSessionId: input.chatSessionId,
+            message: input.message,
+          }),
+        }
+      );
+
+      if (!sendMessageResponse.ok) {
+        throw new Error("Error al enviar el mensaje");
+      }
+
+      return sendMessageResponse.json();
+    }),
+
+  // Método para renombrar un chat
+  renameChat: publicProcedure
+    .input(z.object({ chatSessionId: z.string(), newName: z.string() }))
+    .mutation(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/renameChatSession`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatSessionId: input.chatSessionId,
+          name: input.newName,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al renombrar el chat");
+      }
+
+      return { success: true };
+    }),
+
+  // Método para exportar un chat a HTML
+  exportChat: publicProcedure
+    .input(z.object({ chatSessionId: z.string() }))
+    .mutation(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/exportChatSession`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatSessionId: input.chatSessionId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al exportar el chat");
+      }
+
+      return response.json();
     }),
 });
