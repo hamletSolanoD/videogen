@@ -7,7 +7,6 @@ export default function ChatList() {
       <div className="px-4 py-5 sm:p-6">
         <h2 className="text-lg font-medium text-gray-900">Chat List</h2>
         <div className="mt-5">
-          {/* Aquí va tu contenido */}
           <p>Tu lista de chats aparecerá aquí</p>
         </div>
       </div>

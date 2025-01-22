@@ -17,16 +17,20 @@ export default async function EditorLayout({
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen overflow-hidden"> {/* Added overflow-hidden */}
       {/* Navbar lateral */}
       <Sidebar />
 
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 overflow-hidden"> {/* Added overflow-hidden */}
         {/* Navbar superior */}
         <Topbar user={session.user} />
 
         {/* Contenido principal */}
-        <main className="flex-1 p-4 bg-gray-100">{children}</main>
+        <main className="flex-1 p-4 bg-gray-100 overflow-auto"> {/* Changed to overflow-auto */}
+          <div className="h-full">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );
