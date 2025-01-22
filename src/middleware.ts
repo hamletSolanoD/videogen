@@ -1,27 +1,19 @@
+// middleware.ts (en la raíz del proyecto)
 import { NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import type { NextRequest } from "next/server";
+import { auth } from "./server/auth";
 
-export async function middleware(req: any) {
-  const token = await getToken({
-    req,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+export async function middleware(request: NextRequest) {
+  const session = await auth();
+  const isHomePage = request.nextUrl.pathname === "/";
 
-  const { pathname } = req.nextUrl;
-
-  if (pathname === "/" || pathname.startsWith("/landing")) {
-    return NextResponse.next();
-  }
-
-  if (pathname.startsWith("/editor")) {
-    if (!token) {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
+  if (session?.user && isHomePage) {
+    return NextResponse.redirect(new URL("/editor/chatlist", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/landing/:path*", "/"], 
+  matcher: ["/"],
 };

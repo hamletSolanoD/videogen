@@ -32,7 +32,10 @@ declare module "next-auth" {
  */
 export const authConfig = {
   providers: [
-    DiscordProvider,
+    DiscordProvider({
+      clientId: process.env.DISCORD_CLIENT_ID!,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+    }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -50,5 +53,12 @@ export const authConfig = {
         id: user.id,
       },
     }),
+    redirect: async ({ url, baseUrl }) => {
+      // Redirige al usuario a /editor/chatlist después de autenticarse
+      if (url.startsWith(baseUrl)) {
+        return `${baseUrl}/editor/chatlist`;
+      }
+      return baseUrl;
+    },
   },
-}  satisfies NextAuthConfig;
+} satisfies NextAuthConfig;
