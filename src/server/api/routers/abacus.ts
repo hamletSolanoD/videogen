@@ -6,24 +6,30 @@ import { env } from "~/env";
 export const abacusClientRouter = createTRPCRouter({
   // Método para obtener los chats de un usuario por su ID
   getChatsByUserId: publicProcedure
-    .input(z.object({ userId: z.string() }))
-    .query(async ({ input }) => {
-      const response = await fetch(`${env.ABACUS_API_URL}/listChatSessions`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${env.ABACUS_API_KEY}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      });
+  .input(z.object({ userId: z.string() }))
+  .query(async ({ input }) => {
+    const response = await fetch(`${env.ABACUS_API_URL}/listChatSessions`, {
+      method: "GET",
+      headers: {
+        "apiKey": `${env.ABACUS_API_KEY}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error("Error al obtener los chats del usuario");
-      }
+    if (!response.ok) {
+      throw new Error("Error al obtener los chats del usuario");
+    }
 
-      const data = await response.json();
-      // Filtrar los chats por el userId si es necesario
-      return data.ChatSession || [];
-    }),
+    const data = await response.json();
+
+    // Verifica que el campo `result` exista y sea un array
+    if (!data.success || !Array.isArray(data.result)) {
+      throw new Error("La respuesta de la API no contiene un resultado válido");
+    }
+
+    // Devuelve el array de chats
+    return data.result;
+  }),
 
   // Método para continuar una conversación específica
   continueChat: publicProcedure
@@ -32,7 +38,7 @@ export const abacusClientRouter = createTRPCRouter({
       const response = await fetch(`${env.ABACUS_API_URL}/getChatSession`, {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${env.ABACUS_API_KEY}`,
+          "apiKey": `${env.ABACUS_API_KEY}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
@@ -52,7 +58,7 @@ export const abacusClientRouter = createTRPCRouter({
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${env.ABACUS_API_KEY}`,
+            "apiKey": `${env.ABACUS_API_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -76,7 +82,7 @@ export const abacusClientRouter = createTRPCRouter({
       const response = await fetch(`${env.ABACUS_API_URL}/renameChatSession`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${env.ABACUS_API_KEY}`,
+          "apiKey": `${env.ABACUS_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -99,7 +105,7 @@ export const abacusClientRouter = createTRPCRouter({
       const response = await fetch(`${env.ABACUS_API_URL}/exportChatSession`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${env.ABACUS_API_KEY}`,
+          apiKey: `${env.ABACUS_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -113,4 +119,204 @@ export const abacusClientRouter = createTRPCRouter({
 
       return response.json();
     }),
+  // Crear un nuevo chat
+  createChat: publicProcedure
+  .input(z.object({ name: z.string(), initialMessage: z.string(), projectId: z.string() }))
+  .mutation(async ({ input }) => {
+    const response = await fetch(`${env.ABACUS_API_URL}/createChatSession`, {
+      method: "POST",
+      headers: {
+        "apiKey": `${env.ABACUS_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        projectId: input.projectId, // Asegúrate de incluir el projectId
+        name: input.name,
+        initialMessage: input.initialMessage,
+      }),
+    });
+    console.log(response);
+
+    if (!response.ok) {
+      throw new Error("Error al crear el chat");
+    }
+
+    return response.json();
+  }),
+
+  // Eliminar un chat
+  deleteChat: publicProcedure
+    .input(z.object({ chatSessionId: z.string() }))
+    .mutation(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/deleteChatSession`, {
+        method: "DELETE",
+        headers: {
+          "apiKey": `${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatSessionId: input.chatSessionId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al eliminar el chat");
+      }
+
+      return { success: true };
+    }),
+
+  // Obtener detalles de un chat
+  getChatDetails: publicProcedure
+    .input(z.object({ chatSessionId: z.string() }))
+    .query(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/getChatSession`, {
+        method: "GET",
+        headers: {
+          "apiKey": `${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al obtener los detalles del chat");
+      }
+
+      return response.json();
+    }),
+
+  // Personalizar un chat
+  customizeChat: publicProcedure
+    .input(z.object({ chatSessionId: z.string(), description: z.string(), tags: z.array(z.string()).optional() }))
+    .mutation(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/customizeChatSession`, {
+        method: "POST",
+        headers: {
+          "apiKey": `${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatSessionId: input.chatSessionId,
+          description: input.description,
+          tags: input.tags,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al personalizar el chat");
+      }
+
+      return { success: true };
+    }),
+
+  // Obtener historial de mensajes
+  getChatHistory: publicProcedure
+    .input(z.object({ chatSessionId: z.string() }))
+    .query(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/getChatHistory`, {
+        method: "GET",
+        headers: {
+          "apiKey": `${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al obtener el historial de mensajes");
+      }
+
+      return response.json();
+    }),
+
+  // Marcar un chat como favorito
+  markChatAsFavorite: publicProcedure
+    .input(z.object({ chatSessionId: z.string() }))
+    .mutation(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/markChatAsFavorite`, {
+        method: "POST",
+        headers: {
+          "apiKey": `${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatSessionId: input.chatSessionId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al marcar el chat como favorito");
+      }
+
+      return { success: true };
+    }),
+
+  // Buscar mensajes en un chat
+  searchMessages: publicProcedure
+    .input(z.object({ chatSessionId: z.string(), keyword: z.string() }))
+    .query(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/searchMessages`, {
+        method: "POST",
+        headers: {
+          "apiKey": `${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatSessionId: input.chatSessionId,
+          keyword: input.keyword,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al buscar mensajes en el chat");
+      }
+
+      return response.json();
+    }),
+
+  // Exportar todos los chats de un usuario
+  exportAllChats: publicProcedure
+    .input(z.object({ userId: z.string(), format: z.enum(["HTML", "JSON"]) }))
+    .mutation(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/exportAllChats`, {
+        method: "POST",
+        headers: {
+          "apiKey": `${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: input.userId,
+          format: input.format,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al exportar los chats");
+      }
+
+      return response.json();
+    }),
+
+  // Cerrar un chat
+  closeChat: publicProcedure
+    .input(z.object({ chatSessionId: z.string() }))
+    .mutation(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/closeChatSession`, {
+        method: "POST",
+        headers: {
+          "apiKey": `${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatSessionId: input.chatSessionId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al cerrar el chat");
+      }
+
+      return { success: true };
+    }),
+
+
 });
