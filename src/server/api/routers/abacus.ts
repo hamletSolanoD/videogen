@@ -6,30 +6,30 @@ import { env } from "~/env";
 export const abacusClientRouter = createTRPCRouter({
   // Método para obtener los chats de un usuario por su ID
   getChatsByUserId: publicProcedure
-  .input(z.object({ userId: z.string() }))
-  .query(async ({ input }) => {
-    const response = await fetch(`${env.ABACUS_API_URL}/listChatSessions`, {
-      method: "GET",
-      headers: {
-        "apiKey": `${env.ABACUS_API_KEY}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/listChatSessions`, {
+        method: "GET",
+        headers: {
+          "apiKey": `${env.ABACUS_API_KEY}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error("Error al obtener los chats del usuario");
-    }
+      if (!response.ok) {
+        throw new Error("Error al obtener los chats del usuario");
+      }
 
-    const data = await response.json();
+      const data = await response.json();
 
-    // Verifica que el campo `result` exista y sea un array
-    if (!data.success || !Array.isArray(data.result)) {
-      throw new Error("La respuesta de la API no contiene un resultado válido");
-    }
+      // Verifica que el campo `result` exista y sea un array
+      if (!data.success || !Array.isArray(data.result)) {
+        throw new Error("La respuesta de la API no contiene un resultado válido");
+      }
 
-    // Devuelve el array de chats
-    return data.result;
-  }),
+      // Devuelve el array de chats
+      return data.result;
+    }),
 
   // Método para continuar una conversación específica
   continueChat: publicProcedure
@@ -121,28 +121,29 @@ export const abacusClientRouter = createTRPCRouter({
     }),
   // Crear un nuevo chat
   createChat: publicProcedure
-  .input(z.object({ name: z.string(), initialMessage: z.string(), projectId: z.string() }))
-  .mutation(async ({ input }) => {
-    const response = await fetch(`${env.ABACUS_API_URL}/createChatSession`, {
-      method: "POST",
-      headers: {
-        "apiKey": `${env.ABACUS_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        projectId: input.projectId, // Asegúrate de incluir el projectId
+    .input(z.object({ name: z.string(), initialMessage: z.string() }))
+    .mutation(async ({ input }) => {
+      const response = await fetch(`${env.ABACUS_API_URL}/createChatSession`, {
+        method: "POST",
+        headers: {
+          "apiKey": `${env.ABACUS_API_KEY}`,
+        },
+        body: JSON.stringify({
+          "projectId": `${env.ABACUS_PROJECT_ID}`,
+          "name": input.name,
+        }),
+      });
+      console.log("test", response, {
+        projectId: `${env.ABACUS_PROJECT_ID}`,
         name: input.name,
-        initialMessage: input.initialMessage,
-      }),
-    });
-    console.log(response);
+      });
 
-    if (!response.ok) {
-      throw new Error("Error al crear el chat");
-    }
+      if (!response.ok) {
+        throw new Error("Error al crear el chat");
+      }
 
-    return response.json();
-  }),
+      return response.json();
+    }),
 
   // Eliminar un chat
   deleteChat: publicProcedure
@@ -211,21 +212,25 @@ export const abacusClientRouter = createTRPCRouter({
 
   // Obtener historial de mensajes
   getChatHistory: publicProcedure
-    .input(z.object({ chatSessionId: z.string() }))
+    .input(z.object({ chatSessionId: z.string() })) // Recibe el ID de la sesión de chat
     .query(async ({ input }) => {
-      const response = await fetch(`${env.ABACUS_API_URL}/getChatHistory`, {
+      const response = await fetch(`${env.ABACUS_API_URL}/getChatSession`, {
         method: "GET",
         headers: {
-          "apiKey": `${env.ABACUS_API_KEY}`,
-          "Content-Type": "application/json",
+          "apiKey": `${env.ABACUS_API_KEY}`, // Clave API para autenticación
         },
+        body:  JSON.stringify({
+          chatSessionId: input.chatSessionId, // ID de la sesión de chat
+        }),
       });
 
+      console.log("response",response.json())
+
       if (!response.ok) {
-        throw new Error("Error al obtener el historial de mensajes");
+        throw new Error("Error al obtener el historial del chat");
       }
 
-      return response.json();
+      return response.json(); // Devuelve el historial del chat
     }),
 
   // Marcar un chat como favorito

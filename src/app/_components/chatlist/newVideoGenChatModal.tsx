@@ -10,13 +10,13 @@ interface NewChatModalProps {
 
 interface FormData {
   name: string;
-  description: string;
+  initialMessage: string; // Cambiado de description a initialMessage
 }
 
 export const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose }) => {
   const [formData, setFormData] = React.useState<FormData>({
     name: '',
-    description: ''
+    initialMessage: '' // Cambiado de description a initialMessage
   });
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -24,8 +24,6 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose }) =
   const createChat = api.abacusClientRouter.createChat.useMutation({
     onSuccess: () => {
       onClose();
-      // Opcional: Refrescar la lista de chats
-      // utils.chat.getChatsByUserId.invalidate();
     },
   });
 
@@ -36,7 +34,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose }) =
     try {
       await createChat.mutateAsync({
         name: formData.name,
-        description: formData.description,
+        initialMessage: formData.initialMessage, // Cambiado de description a initialMessage
       });
     } catch (error) {
       console.error('Error creating chat:', error);
@@ -73,13 +71,13 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose }) =
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-            Description
+          <label htmlFor="initialMessage" className="block text-sm font-medium text-gray-700">
+            Initial Message
           </label>
           <textarea
-            id="description"
-            name="description"
-            value={formData.description}
+            id="initialMessage"
+            name="initialMessage"
+            value={formData.initialMessage}
             onChange={handleChange}
             rows={3}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
