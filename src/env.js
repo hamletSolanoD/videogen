@@ -16,6 +16,9 @@ export const env = createEnv({
     ABACUS_API_KEY: z.string(),
     ABACUS_PROJECT_ID: z.string(),
     ABACUS_API_URL: z.string().url(),
+    ABACUS_DEPLOYMENT_TOKEN: z.string().url(),
+    ABACUS_DEPLOYMENT_ID: z.string().url(),
+
     DATABASE_URL: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
@@ -41,6 +44,9 @@ export const env = createEnv({
     AUTH_SECRET: process.env.AUTH_SECRET,
     ABACUS_PROJECT_ID:process.env.ABACUS_PROJECT_ID,
     AUTH_DISCORD_ID: process.env.AUTH_DISCORD_ID,
+    ABACUS_DEPLOYMENT_TOKEN: process.env.ABACUS_DEPLOYMENT_TOKEN,
+    ABACUS_DEPLOYMENT_ID: process.env.ABACUS_DEPLOYMENT_ID,
+
     AUTH_DISCORD_SECRET: process.env.AUTH_DISCORD_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
