@@ -212,27 +212,23 @@ export const abacusClientRouter = createTRPCRouter({
 
   // Obtener historial de mensajes
   getChatHistory: publicProcedure
-    .input(z.object({ chatSessionId: z.string() })) // Recibe el ID de la sesión de chat
-    .query(async ({ input }) => {
-      const response = await fetch(`${env.ABACUS_API_URL}/getChatSession`, {
-        method: "GET",
-        headers: {
-          "apiKey": `${env.ABACUS_API_KEY}`, // Clave API para autenticación
-        },
-        body:  JSON.stringify({
-          chatSessionId: input.chatSessionId, // ID de la sesión de chat
-        }),
-      });
+  .input(z.object({ chatSessionId: z.string() })) // Recibe el ID de la sesión de chat
+  .query(async ({ input }) => {
+    const response = await fetch(`${env.ABACUS_API_URL}/getChatSession?chatSessionId=${input.chatSessionId}`, {
+      method: "GET",
+      headers: {
+        "apiKey": `${env.ABACUS_API_KEY}`, // Clave API para autenticación
+      },
+    });
 
-      console.log("response",response.json())
+    if (!response.ok) {
+      throw new Error("Error al obtener el historial del chat");
+    }
 
-      if (!response.ok) {
-        throw new Error("Error al obtener el historial del chat");
-      }
+    return response.json(); // Devuelve el historial del chat
+  }),
 
-      return response.json(); // Devuelve el historial del chat
-    }),
-
+  
   // Marcar un chat como favorito
   markChatAsFavorite: publicProcedure
     .input(z.object({ chatSessionId: z.string() }))
